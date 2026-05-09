@@ -28,7 +28,14 @@ jobs:
       - name: Build project
         run: npm run build
         env:
+          # Database link for Prisma
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Required for Better-Auth & Cryptr encryption
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          # Required if your app uses Sentry or Inngest during build
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          # Use a placeholder if you don't have a real one yet
+          CRYPTR_SECRET: ${{ secrets.BETTER_AUTH_SECRET }} 
 
-      # This is where the AWS App Runner trigger would go. 
-      # For now, let's just get the build working!
+      # Once the build above turns GREEN, we can add the 
+      # AWS App Runner deployment step here.
