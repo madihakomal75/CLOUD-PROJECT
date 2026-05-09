@@ -1,0 +1,38 @@
+name: Deploy to AWS App Runner
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build and Sync Database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          npx prisma generate
+          npm run build
+
+      # This is where we tell AWS to pull the code and run it
+      - name: Deploy to App Runner
+        uses: awslabs/amazon-app-runner-deploy@v1
+        with:
+          service: nodebase-service
+          image: public.ecr.aws/docker/library/node:20 # Simplified for now
+          access-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          region: ${{ secrets.AWS_REGION }}
+          cpu: 1
+          memory: 2
