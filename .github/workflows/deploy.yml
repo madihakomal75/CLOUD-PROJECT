@@ -28,14 +28,20 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          # Database link for Prisma
+          # Database connection for Prisma
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # Required for Better-Auth & Cryptr encryption
+          
+          # The specific key your code (src/lib/encryption.ts) is looking for
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          
+          # Required for Better-Auth
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          # Required if your app uses Sentry or Inngest during build
+          
+          # URL for Inngest/Sentry telemetry
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          # Use a placeholder if you don't have a real one yet
-          CRYPTR_SECRET: ${{ secrets.BETTER_AUTH_SECRET }} 
+          
+          # Adding these as fallbacks in case other parts of the code use them
+          CRYPTR_SECRET: ${{ secrets.ENCRYPTION_KEY }}
+          ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_KEY }}
 
-      # Once the build above turns GREEN, we can add the 
-      # AWS App Runner deployment step here.
+      # Once this build turns GREEN, your code is ready for App Runner!
