@@ -5,15 +5,19 @@ RUN apk add --no-cache libc6-compat openssl
 
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
+# Ensure the client version matches your specific environment requirement
 RUN npm install @prisma/client@6.19.3 --legacy-peer-deps
 
 COPY . .
 
-# Ensure directory and generate
+# CRITICAL: Manually purge the shadowing file in case it was cached or missed in the push
+RUN rm -f src/generated/prisma.ts 
+
+# Ensure the output directory is ready and clean
 RUN mkdir -p src/generated/prisma
 RUN npx prisma generate
 
-# Build the application - we skip linting/typecheck via the config changes above
+# Build the application
 ENV NODE_ENV=production
 RUN npm run build
 
@@ -26,6 +30,8 @@ ENV NODE_ENV=production
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+
+# Copy the actual generated folder that survived the build
 COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
 
 EXPOSE 3000
