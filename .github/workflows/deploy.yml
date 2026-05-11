@@ -1,47 +1,49 @@
-name: Deploy to AWS App Runner
+name: Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ] # Or your primary branch name
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: nodebase-app
+  ECS_SERVICE: nodebase-service
+  ECS_CLUSTER: nodebase-cluster # Verify this matches your cluster name
+  ECS_TASK_DEFINITION: .aws/task-definition.json # We will create this next
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install dependencies
-        run: npm install
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Build project
-        run: npm run build
-        env:
-          # Database connection for Prisma
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          
-          # The specific key your code (src/lib/encryption.ts) is looking for
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-          
-          # Required for Better-Auth
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          
-          # URL for Inngest/Sentry telemetry
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          
-          # Adding these as fallbacks in case other parts of the code use them
-          CRYPTR_SECRET: ${{ secrets.ENCRYPTION_KEY }}
-          ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_KEY }}
-
-      # Once this build turns GREEN, your code is ready for App Runner!
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          image: ${{ steps.build-image.outputs.image }}
+          wait-for-service-stability: true

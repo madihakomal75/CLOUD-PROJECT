@@ -1,9 +1,8 @@
 import Handlebars from "handlebars";
-import { NonRetriableError } from "inngest";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { NodeExecutor } from "@/features/executions/types";
-import { openAiChannel } from "@/inngest/channels/openai";
+import { openAiChannel } from "@/lib/inngest-stubs";
 import prisma from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 
@@ -43,7 +42,7 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
         status: "error",
       })
     );
-    throw new NonRetriableError("OpenAi node: Variable name is missing");
+    throw new Error("OpenAi node: Variable name is missing");
   }
 
   if (!data.credentialId) {
@@ -53,7 +52,7 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
         status: "error",
       }),
     );
-    throw new NonRetriableError("OpenAi node: Credential is required");
+    throw new Error("OpenAi node: Credential is required");
   }
 
   if (!data.userPrompt) {
@@ -63,7 +62,7 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
         status: "error",
       })
     );
-    throw new NonRetriableError("OpenAi node: User prompt is missing");
+    throw new Error("OpenAi node: User prompt is missing");
   }
 
   const systemPrompt = data.systemPrompt
@@ -87,7 +86,7 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
         status: "error",
       })
     );
-    throw new NonRetriableError("OpenAI node: Credential not found");
+    throw new Error("OpenAI node: Credential not found");
   }
 
   const openai = createOpenAI({

@@ -1,4 +1,4 @@
-import { sendWorkflowExecution } from "@/inngest/utils";
+import { sendToQueue } from "@/lib/sqs";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -25,8 +25,9 @@ export async function POST(request: NextRequest) {
       raw: body,
     };
 
-    // Trigger an Inngest job
-    await sendWorkflowExecution({
+    // Trigger an SQS job
+    await sendToQueue({
+      type: "workflowExecution",
       workflowId,
       initialData: {
         googleForm: formData,

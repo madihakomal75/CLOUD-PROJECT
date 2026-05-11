@@ -1,8 +1,7 @@
 import Handlebars from "handlebars";
 import { decode } from "html-entities";
-import { NonRetriableError } from "inngest";
 import type { NodeExecutor } from "@/features/executions/types";
-import { slackChannel } from "@/inngest/channels/slack";
+import { slackChannel } from "@/lib/inngest-stubs";
 import ky from "ky";
 
 Handlebars.registerHelper("json", (context) => {
@@ -39,7 +38,7 @@ export const slackExecutor: NodeExecutor<SlackData> = async ({
         status: "error",
       }),
     );
-    throw new NonRetriableError("Slack node: Message content is required");
+    throw new Error("Slack node: Message content is required");
   }
 
   const rawContent = Handlebars.compile(data.content)(context);
@@ -54,7 +53,7 @@ export const slackExecutor: NodeExecutor<SlackData> = async ({
             status: "error",
           }),
         );
-        throw new NonRetriableError("Slack node: Webhook URL is required");
+        throw new Error("Slack node: Webhook URL is required");
       }
 
       await ky.post(data.webhookUrl, {
@@ -70,7 +69,7 @@ export const slackExecutor: NodeExecutor<SlackData> = async ({
             status: "error",
           })
         );
-        throw new NonRetriableError("Slack node: Variable name is missing");
+        throw new Error("Slack node: Variable name is missing");
       }
 
       return {

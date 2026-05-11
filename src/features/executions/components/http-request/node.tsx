@@ -6,7 +6,7 @@ import { memo, useState } from "react";
 import { BaseExecutionNode } from "../base-execution-node";
 import { HttpRequestFormValues, HttpRequestDialog } from "./dialog";
 import { useNodeStatus } from "../../hooks/use-node-status";
-import { HTTP_REQUEST_CHANNEL_NAME } from "@/inngest/channels/http-request";
+import { HTTP_REQUEST_CHANNEL_NAME } from "@/lib/inngest-stubs";
 import { fetchHttpRequestRealtimeToken } from "./actions";
 
 type HttpRequestNodeData = {

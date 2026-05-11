@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "biome check",
     "ngrok:dev": "dotenv -- ngrok http --url=$NGROK_URL 3000",
     "format": "biome format --write",
@@ -16,6 +16,7 @@
     "@ai-sdk/anthropic": "^2.0.23",
     "@ai-sdk/google": "^2.0.17",
     "@ai-sdk/openai": "^2.0.44",
+    "@aws-sdk/client-sqs": "^3.1045.0",
     "@hookform/resolvers": "^5.2.2",
     "@inngest/realtime": "^0.4.4",
     "@paralleldrive/cuid2": "^2.2.2",

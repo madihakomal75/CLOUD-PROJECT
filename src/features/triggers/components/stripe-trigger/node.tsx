@@ -4,7 +4,7 @@ import { BaseTriggerNode } from "../base-trigger-node";
 import { StripeTriggerDialog } from "./dialog";
 import { useNodeStatus } from "@/features/executions/hooks/use-node-status";
 import { fetchStripeTriggerRealtimeToken } from "./actions";
-import { STRIPE_TRIGGER_CHANNEL_NAME } from "@/inngest/channels/stripe-trigger";
+import { STRIPE_TRIGGER_CHANNEL_NAME } from "@/lib/inngest-stubs";
 
 export const StripeTriggerNode = memo((props: NodeProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);

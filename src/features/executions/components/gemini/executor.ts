@@ -1,9 +1,8 @@
 import Handlebars from "handlebars";
-import { NonRetriableError } from "inngest";
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { NodeExecutor } from "@/features/executions/types";
-import { geminiChannel } from "@/inngest/channels/gemini";
+import { geminiChannel } from "@/lib/inngest-stubs";
 import prisma from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 
@@ -43,7 +42,7 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
         status: "error",
       })
     );
-    throw new NonRetriableError("Gemini node: Variable name is missing");
+    throw new Error("Gemini node: Variable name is missing");
   }
 
   if (!data.credentialId) {
@@ -53,7 +52,7 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
         status: "error",
       }),
     );
-    throw new NonRetriableError("Gemini node: Credential is required");
+    throw new Error("Gemini node: Credential is required");
   }
 
   if (!data.userPrompt) {
@@ -63,7 +62,7 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
         status: "error",
       })
     );
-    throw new NonRetriableError("Gemini node: User prompt is missing");
+    throw new Error("Gemini node: User prompt is missing");
   }
 
   const systemPrompt = data.systemPrompt
@@ -87,7 +86,7 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
         status: "error",
       })
     );
-    throw new NonRetriableError("Gemini node: Credential not found");
+    throw new Error("Gemini node: Credential not found");
   }
 
   const google = createGoogleGenerativeAI({

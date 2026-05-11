@@ -6,7 +6,7 @@ import { BaseExecutionNode } from "../base-execution-node";
 import { DiscordDialog, DiscordFormValues } from "./dialog";
 import { useNodeStatus } from "../../hooks/use-node-status";
 import { fetchDiscordRealtimeToken } from "./actions";
-import { DISCORD_CHANNEL_NAME } from "@/inngest/channels/discord";
+import { DISCORD_CHANNEL_NAME } from "@/lib/inngest-stubs";
 
 type DiscordNodeData = {
   webhookUrl?: string;
