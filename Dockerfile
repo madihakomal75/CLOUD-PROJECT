@@ -9,13 +9,11 @@ RUN npm install @prisma/client@6.19.3 --legacy-peer-deps
 
 COPY . .
 
-# IMPORTANT: Remove the manual file that might be shadowing the folder
+# Remove the shadowing file and ensure target directory exists
 RUN rm -f src/generated/prisma.ts
-
-# Ensure the folder exists
 RUN mkdir -p src/generated/prisma
 
-# Generate Prisma into that specific folder
+# Generate Prisma based on the 'output' in your schema.prisma
 RUN npx prisma generate
 
 # Build the application
@@ -32,7 +30,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Copy the generated client folder so it's available at runtime
+# Copy generated Prisma files to the final image
 COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
 
 EXPOSE 3000
