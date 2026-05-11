@@ -2,19 +2,19 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install system dependencies for Prisma on Alpine
+# Install system dependencies for Alpine
 RUN apk add --no-cache libc6-compat openssl
 
+# Install dependencies (including the specific Prisma version to prevent build-time crashes)
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
+RUN npm install @prisma/client@6.16.3 --legacy-peer-deps
 
-# Copy everything else EXCEPT what's in .dockerignore
+# Copy source and clean any local Windows remnants
 COPY . .
-
-# WIPE any potential local remnants just in case
 RUN rm -rf node_modules/.prisma node_modules/@prisma/client
 
-# Generate the correct Linux binary
+# Generate Linux-specific Prisma Client
 RUN npx prisma generate
 
 # Build the application
@@ -27,11 +27,12 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 
+# Copy standalone build files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# CRITICAL: Place the Linux engine in all searched locations
+# PLACEMENT FIX: Move Linux binaries to every path the app searches
 COPY --from=builder /app/node_modules/.prisma ./.next/standalone/node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./.next/standalone/node_modules/@prisma/client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
