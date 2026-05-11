@@ -1,23 +1,20 @@
-# Stage 1: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Install system dependencies for Alpine
 RUN apk add --no-cache libc6-compat openssl
 
-# Install dependencies (including the specific Prisma version to prevent build-time crashes)
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
-RUN npm install @prisma/client@6.16.3 --legacy-peer-deps
 
-# Copy source and clean any local Windows remnants
+# 1. Match the version the logs are demanding (6.19.3)
+RUN npm install @prisma/client@6.19.3 --legacy-peer-deps
+
 COPY . .
 RUN rm -rf node_modules/.prisma node_modules/@prisma/client
 
-# Generate Linux-specific Prisma Client
-RUN npx prisma generate
+# 2. Use --no-engine or --skip-generate to prevent the internal npm install
+RUN npx prisma generate --no-engine
 
-# Build the application
+# 3. Build the application
 ENV NODE_ENV=production
 RUN npm run build
 
