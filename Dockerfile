@@ -34,4 +34,4 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD npx prisma db push && node server.js
