@@ -66,6 +66,13 @@ jobs:
         with:
           node-version: 22
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
@@ -80,33 +87,38 @@ jobs:
 
       - name: Aggressive Cleanup
         run: |
-          # Remove the massive Prisma engine cache (often 100MB+)
           rm -rf node_modules/@prisma/engines
           rm -rf node_modules/prisma
           rm -rf node_modules/.cache
-          
-          # Delete all Prisma binaries EXCEPT the one for Lambda (rhel)
+          # Keep only the RHEL engine for Lambda
           find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
-          
-          # Remove other common bloat
           rm -rf node_modules/@types
           rm -rf node_modules/typescript
           find node_modules -type f -name "*.md" -delete
           find node_modules -type f -name "*.map" -delete
-          find node_modules -type f -name "*.ts" -delete
-          find node_modules -type d -name "test" -exec rm -rf {} +
+          find node_modules -type f -name "*.ts" ! -path "*/node_modules/.prisma/*" -delete
+          find node_modules -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
 
       - name: Create deployment package
         run: |
-          # Use an explicit exclusion list to ensure the zip is lean
           zip -r function.zip dist/ node_modules/ prisma/ \
-            -x "*.git*" "*node_modules/@prisma/engines*" "*node_modules/typescript*" "*node_modules/@types*"
+            -x "*.git*" \
+            -x "*node_modules/@prisma/engines*" \
+            -x "*node_modules/typescript*" \
+            -x "*node_modules/@types*"
+          echo "Zip size: $(du -sh function.zip | cut -f1)"
 
-      - name: Deploy to AWS Lambda
+      - name: Upload to S3
+        run: |
+          # Matches the bucket name from image_7fce9e.png
+          aws s3 cp function.zip s3://${{ secrets.AWS_BUCKET_NAME }}/deployments/nodebase-worker-${{ github.sha }}.zip
+
+      - name: Deploy to AWS Lambda via S3
         uses: appleboy/lambda-action@master
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: us-east-1
+          aws_region: ${{ secrets.AWS_REGION }}
           function_name: nodebase-workflow-worker
-          zip_file: function.zip
+          s3_bucket: ${{ secrets.AWS_BUCKET_NAME }}
+          s3_key: deployments/nodebase-worker-${{ github.sha }}.zip
