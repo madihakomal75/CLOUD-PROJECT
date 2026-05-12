@@ -78,22 +78,19 @@ jobs:
       - name: Prune dev dependencies
         run: npm prune --production --legacy-peer-deps
 
-      - name: Deep Cleanup for AWS Size Limits
+      - name: Aggressive Cleanup
         run: |
-          # Remove heavy build tools and caches
-          rm -rf node_modules/.cache
-          rm -rf node_modules/@types
-          rm -rf node_modules/typescript
+          # Remove the massive Prisma engine cache (often 100MB+)
+          rm -rf node_modules/@prisma/engines
           rm -rf node_modules/prisma
-
-          # CRITICAL: Delete all Prisma engines except the RHEL one used by Lambda
-          # This usually saves ~100MB alone.
+          rm -rf node_modules/.cache
+          
+          # Delete all Prisma binaries EXCEPT the one for Lambda (rhel)
           find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
           
-          # Remove all engines from the CLI cache if they exist
-          rm -rf node_modules/@prisma/engines
-          
-          # Remove unnecessary files (docs, maps, types)
+          # Remove other common bloat
+          rm -rf node_modules/@types
+          rm -rf node_modules/typescript
           find node_modules -type f -name "*.md" -delete
           find node_modules -type f -name "*.map" -delete
           find node_modules -type f -name "*.ts" -delete
@@ -101,8 +98,9 @@ jobs:
 
       - name: Create deployment package
         run: |
-          # Create zip containing only runtime files
-          zip -r function.zip dist/ node_modules/ prisma/ -x "*.git*"
+          # Use an explicit exclusion list to ensure the zip is lean
+          zip -r function.zip dist/ node_modules/ prisma/ \
+            -x "*.git*" "*node_modules/@prisma/engines*" "*node_modules/typescript*" "*node_modules/@types*"
 
       - name: Deploy to AWS Lambda
         uses: appleboy/lambda-action@master
