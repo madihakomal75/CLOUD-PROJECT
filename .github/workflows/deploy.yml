@@ -75,16 +75,20 @@ jobs:
 
     - name: Install dependencies
       run: npm install --legacy-peer-deps
+      working-directory: ${{ github.workspace }}
 
     - name: Generate Prisma client
       run: npx prisma generate
+      working-directory: ${{ github.workspace }}
 
     - name: Compile TypeScript
-      run: npx tsc --project workers/tsconfig.json
+      run: npx tsc --project ../workers/tsconfig.json
+      working-directory: ${{ github.workspace }}
 
     - name: Create deployment package
       run: |
-        zip -r function.zip dist/ node_modules/ prisma/
+        zip -r function.zip ../dist/ node_modules/ prisma/
+      working-directory: ${{ github.workspace }}
 
     - name: Deploy to AWS Lambda
       uses: appleboy/lambda-action@master
