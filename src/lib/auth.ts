@@ -6,6 +6,9 @@ import { polarClient } from "./polar";
 
 export const auth = betterAuth({
   baseURL: process.env.NEXT_PUBLIC_APP_URL,
+  advanced: {
+    trustHost: true,
+  },
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),

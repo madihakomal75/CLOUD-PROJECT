@@ -58,3 +58,39 @@ jobs:
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
+
+  deploy-lambda:
+    name: Deploy Lambda
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Generate Prisma client
+      run: npx prisma generate
+
+    - name: Compile TypeScript
+      run: npx tsc --project workers/tsconfig.json
+
+    - name: Create deployment package
+      run: |
+        zip -r function.zip dist/ node_modules/ prisma/
+
+    - name: Deploy to AWS Lambda
+      uses: appleboy/lambda-action@master
+      with:
+        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws_region: us-east-1
+        function_name: nodebase-workflow-worker
+        zip_file: function.zip
