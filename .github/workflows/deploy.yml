@@ -65,7 +65,7 @@ jobs:
     environment: production
     defaults:
       run:
-        working-directory: ./nodebase
+        working-directory: nodebase
 
     steps:
     - name: Checkout
