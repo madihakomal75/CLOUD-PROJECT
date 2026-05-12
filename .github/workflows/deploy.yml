@@ -65,8 +65,12 @@ jobs:
       with:
         node-version: 22 # Updated to meet Prisma 7 requirements
     - name: Install dependencies
+      env:
+        PRISMA_SKIP_POSTINSTALL_GENERATE: true
       run: npm install --production --legacy-peer-deps
     - name: Generate Prisma client
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: npx prisma generate
     - name: Compile TypeScript
       run: npx tsc --project workers/tsconfig.json
