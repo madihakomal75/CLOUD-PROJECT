@@ -77,24 +77,24 @@ jobs:
       run: npm install --production --legacy-peer-deps
 
     - name: Generate Prisma client
-      run: npx prisma@6.16.3 generate
+      run: npx prisma generate
 
     - name: Compile TypeScript
-      run: npx tsc --project ../workers/tsconfig.json
+      # Path updated to point directly to workers folder at root
+      run: npx tsc --project workers/tsconfig.json
 
     - name: Cleanup for Slim Zip
       run: |
         # Remove massive cache and source files from node_modules
         rm -rf node_modules/.cache
         rm -rf node_modules/@types
-        # Remove the Prisma engine binaries for other OS types to save space
+        # Keep only the Lambda-specific RHEL binary for Prisma
         find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
 
     - name: Create deployment package
       run: |
-        # Zip only the essentials: compiled JS, production modules, and Prisma
-        zip -r function.zip ../dist/ node_modules/ prisma/ -x "*.git*" "*@types*" "*test*"
-      working-directory: nodebase
+        # Zip from root; 'dist' and 'node_modules' are top-level
+        zip -r function.zip dist/ node_modules/ prisma/ -x "*.git*" "*@types*" "*test*"
 
     - name: Deploy to AWS Lambda
       uses: appleboy/lambda-action@master
