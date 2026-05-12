@@ -88,28 +88,44 @@ jobs:
 
       - name: Aggressive Cleanup
         run: |
-          # Remove Prisma engines and caches to save ~100MB+
+          # 1. Remove obvious heavy hitters
           rm -rf node_modules/@prisma/engines
           rm -rf node_modules/prisma
           rm -rf node_modules/.cache
-          # Keep only the RHEL query engine needed for Lambda
-          find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
-          # Delete non-runtime bloat
           rm -rf node_modules/@types
           rm -rf node_modules/typescript
+
+          # 2. Deep clean Prisma Client
+          # Delete EVERY engine binary except the one for Lambda (rhel)
+          # Also delete the 'sql-introspection' and 'schema-engine' if they exist
+          find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
+          find node_modules/prisma -name "schema-engine*" -delete 2>/dev/null || true
+
+          # 3. Nuke large non-runtime folders in dependencies
+          # Many modern SDKs include large 'src' or 'dist/browser' folders not needed in Lambda
+          find node_modules -type d -name "src" -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
+
+          # 4. Remove all map files and type definitions (these are huge)
           find node_modules -type f -name "*.md" -delete
           find node_modules -type f -name "*.map" -delete
+          find node_modules -type f -name "*.d.ts" -delete
           find node_modules -type f -name "*.ts" ! -path "*/node_modules/.prisma/*" -delete
-          find node_modules -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
 
       - name: Create deployment package
         run: |
+          # Use an even stricter exclusion list
+          # We exclude node_modules/.bin and other CLI tools
           zip -r function.zip dist/ node_modules/ prisma/ \
             -x "*.git*" \
-            -x "*node_modules/@prisma/engines*" \
-            -x "*node_modules/typescript*" \
-            -x "*node_modules/@types*"
+            -x "node_modules/.bin/*" \
+            -x "node_modules/typescript/*" \
+            -x "node_modules/@types/*"
+          
           echo "Zip size: $(du -sh function.zip | cut -f1)"
+          echo "Estimated unzipped size: $(du -sh --apparent-size . | cut -f1)"
 
       - name: Upload to S3
         run: |
