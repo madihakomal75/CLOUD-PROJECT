@@ -99,3 +99,6 @@ jobs:
           aws_region: us-east-1
           function_name: nodebase-workflow-worker
           zip_file: function.zip
+          # Add these two lines to handle the state shown in image_805244.png
+          reconnect_timeout: 5m
+          wait_for_function_update: true
