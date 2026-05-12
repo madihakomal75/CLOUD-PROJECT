@@ -75,29 +75,25 @@ jobs:
 
     - name: Install dependencies
       run: npm install --production --legacy-peer-deps
-      working-directory: nodebase
 
     - name: Generate Prisma client
       run: npx prisma generate
-      working-directory: nodebase
 
     - name: Compile TypeScript
-      run: npx tsc --project workers/tsconfig.json
-      working-directory: nodebase
+      run: npx tsc --project ../workers/tsconfig.json
 
     - name: Cleanup for Slim Zip
       run: |
         # Remove massive cache and source files from node_modules
-        rm -rf nodebase/node_modules/.cache
-        rm -rf nodebase/node_modules/@types
+        rm -rf node_modules/.cache
+        rm -rf node_modules/@types
         # Remove the Prisma engine binaries for other OS types to save space
-        find nodebase/node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
-      working-directory: nodebase
+        find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
 
     - name: Create deployment package
       run: |
         # Zip only the essentials: compiled JS, production modules, and Prisma
-        zip -r function.zip dist/ node_modules/ prisma/ -x "*.git*" "*@types*" "*test*"
+        zip -r function.zip ../dist/ node_modules/ prisma/ -x "*.git*" "*@types*" "*test*"
       working-directory: nodebase
 
     - name: Deploy to AWS Lambda
