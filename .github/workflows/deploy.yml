@@ -79,7 +79,7 @@ jobs:
 
       - name: Prune dev dependencies
         # Removes non-production packages before we zip the file
-        run: npm prune --production
+        run: npm prune --production --legacy-peer-deps
 
       - name: Cleanup for Slim Zip
         run: |
