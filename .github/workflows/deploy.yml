@@ -67,29 +67,40 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        # Install all deps first so Prisma is available for the build
         run: npm install --legacy-peer-deps
 
       - name: Generate Prisma client
-        # This will now use your local version instead of downloading Prisma 7
         run: npx prisma generate
 
       - name: Compile TypeScript
         run: npx tsc --project workers/tsconfig.json
 
       - name: Prune dev dependencies
-        # Removes non-production packages before we zip the file
         run: npm prune --production --legacy-peer-deps
 
       - name: Cleanup for Slim Zip
         run: |
+          # 1. Remove build tools and heavy caches
           rm -rf node_modules/.cache
           rm -rf node_modules/@types
+          rm -rf node_modules/typescript
+          rm -rf node_modules/prisma
+          
+          # 2. Delete all Prisma engines EXCEPT the one for Lambda (rhel)
+          # This is the most important step for reducing size.
           find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
+          
+          # 3. Remove non-essential files across all modules
+          find node_modules -type f -name "*.md" -delete
+          find node_modules -type f -name "*.map" -delete
+          find node_modules -type f -name "*.ts" -delete
+          find node_modules -type d -name "test" -exec rm -rf {} +
+          find node_modules -type d -name "docs" -exec rm -rf {} +
 
       - name: Create deployment package
         run: |
-          zip -r function.zip dist/ node_modules/ prisma/ -x "*.git*" "*@types*" "*test*"
+          # Zip only the runtime essentials
+          zip -r function.zip dist/ node_modules/ prisma/ -x "*.git*"
 
       - name: Deploy to AWS Lambda
         uses: appleboy/lambda-action@master
@@ -99,6 +110,3 @@ jobs:
           aws_region: us-east-1
           function_name: nodebase-workflow-worker
           zip_file: function.zip
-          # Add these two lines to handle the state shown in image_805244.png
-          reconnect_timeout: 5m
-          wait_for_function_update: true
