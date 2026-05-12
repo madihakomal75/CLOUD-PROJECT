@@ -77,7 +77,7 @@ jobs:
       run: npm install --production --legacy-peer-deps
 
     - name: Generate Prisma client
-      run: npx prisma generate
+      run: npx prisma@6.16.3 generate
 
     - name: Compile TypeScript
       run: npx tsc --project ../workers/tsconfig.json
