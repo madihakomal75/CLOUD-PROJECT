@@ -67,40 +67,31 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
+        env:
+          PRISMA_SKIP_POSTINSTALL_GENERATE: true
         run: npm install --legacy-peer-deps
 
       - name: Generate Prisma client
-        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma@6.16.3 generate --schema prisma/schema.prisma
 
       - name: Compile TypeScript
         run: npx tsc --project workers/tsconfig.json
 
       - name: Prune dev dependencies
-        run: npm prune --production --legacy-peer-deps
+        run: npm prune --production
 
-      - name: Cleanup for Slim Zip
+      - name: Create minimal Lambda package
         run: |
-          # 1. Remove build tools and heavy caches
-          rm -rf node_modules/.cache
-          rm -rf node_modules/@types
-          rm -rf node_modules/typescript
-          rm -rf node_modules/prisma
-          
-          # 2. Delete all Prisma engines EXCEPT the one for Lambda (rhel)
-          # This is the most important step for reducing size.
-          find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
-          
-          # 3. Remove non-essential files across all modules
-          find node_modules -type f -name "*.md" -delete
-          find node_modules -type f -name "*.map" -delete
-          find node_modules -type f -name "*.ts" -delete
-          find node_modules -type d -name "test" -exec rm -rf {} +
-          find node_modules -type d -name "docs" -exec rm -rf {} +
-
-      - name: Create deployment package
-        run: |
-          # Zip only the runtime essentials
-          zip -r function.zip dist/ node_modules/ prisma/ -x "*.git*"
+          mkdir -p lambda-package/node_modules/.prisma
+          mkdir -p lambda-package/node_modules/@prisma/client
+          cp -R node_modules/@prisma/client lambda-package/node_modules/@prisma/client
+          cp -R node_modules/.prisma lambda-package/node_modules/.prisma
+          cp -R dist lambda-package/dist
+          cp -R prisma lambda-package/prisma
+          cd lambda-package
+          zip -r ../function.zip . -x "*.git*" "*@types*" "*test*" "*.md" "*.map"
 
       - name: Deploy to AWS Lambda
         uses: appleboy/lambda-action@master
