@@ -58,35 +58,44 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22 # Updated to meet Prisma 7 requirements
-    - name: Install dependencies
-      env:
-        PRISMA_SKIP_POSTINSTALL_GENERATE: true
-      run: npm install --production --legacy-peer-deps
-    - name: Generate Prisma client
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      run: npx prisma generate
-    - name: Compile TypeScript
-      run: npx tsc --project workers/tsconfig.json
-    - name: Cleanup for Slim Zip
-      run: |
-        rm -rf node_modules/.cache
-        rm -rf node_modules/@types
-        find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
-    - name: Create deployment package
-      run: |
-        zip -r function.zip dist/ node_modules/ prisma/ -x "*.git*" "*@types*" "*test*"
-    - name: Deploy to AWS Lambda
-      uses: appleboy/lambda-action@master
-      with:
-        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws_region: us-east-1
-        function_name: nodebase-workflow-worker
-        zip_file: function.zip
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        # Install all deps first so Prisma is available for the build
+        run: npm install --legacy-peer-deps
+
+      - name: Generate Prisma client
+        # This will now use your local version instead of downloading Prisma 7
+        run: npx prisma generate
+
+      - name: Compile TypeScript
+        run: npx tsc --project workers/tsconfig.json
+
+      - name: Prune dev dependencies
+        # Removes non-production packages before we zip the file
+        run: npm prune --production
+
+      - name: Cleanup for Slim Zip
+        run: |
+          rm -rf node_modules/.cache
+          rm -rf node_modules/@types
+          find node_modules/.prisma/client -name "libquery_engine-*" ! -name "libquery_engine-rhel-*" -delete
+
+      - name: Create deployment package
+        run: |
+          zip -r function.zip dist/ node_modules/ prisma/ -x "*.git*" "*@types*" "*test*"
+
+      - name: Deploy to AWS Lambda
+        uses: appleboy/lambda-action@master
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: us-east-1
+          function_name: nodebase-workflow-worker
+          zip_file: function.zip
