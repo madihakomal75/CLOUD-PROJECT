@@ -1,7 +1,7 @@
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
-RUN apk add --no-cache libc6-compat openssl
+RUN apt-get update && apt-get install -y openssl libc6 && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
@@ -21,9 +21,9 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 2: Run
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
-RUN apk add --no-cache openssl
+RUN apt-get update && apt-get install -y openssl libc6 && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 
 COPY --from=builder /app/public ./public
