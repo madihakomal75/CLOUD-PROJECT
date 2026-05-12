@@ -63,6 +63,9 @@ jobs:
     name: Deploy Lambda
     runs-on: ubuntu-latest
     environment: production
+    defaults:
+      run:
+        working-directory: ./nodebase
 
     steps:
     - name: Checkout
@@ -75,20 +78,16 @@ jobs:
 
     - name: Install dependencies
       run: npm install --legacy-peer-deps
-      working-directory: ${{ github.workspace }}
 
     - name: Generate Prisma client
       run: npx prisma generate
-      working-directory: ${{ github.workspace }}
 
     - name: Compile TypeScript
-      run: npx tsc --project ../workers/tsconfig.json
-      working-directory: ${{ github.workspace }}
+      run: npx tsc --project workers/tsconfig.json
 
     - name: Create deployment package
       run: |
-        zip -r function.zip ../dist/ node_modules/ prisma/
-      working-directory: ${{ github.workspace }}
+        zip -r function.zip dist/ node_modules/ prisma/.
 
     - name: Deploy to AWS Lambda
       uses: appleboy/lambda-action@master
