@@ -26,7 +26,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 # CRITICAL: Copy the generated prisma engine into the standalone node_modules
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
 
 EXPOSE 3000
 # Remove 'prisma db push' from CMD. Do this manually or in a separate job.
