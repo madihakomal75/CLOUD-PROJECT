@@ -6,7 +6,7 @@ variable "better_auth_secret" {}
 variable "encryption_key" {}
 variable "google_client_id" {}
 variable "google_client_secret" {}
-variable "github_client_id" {}
-variable "github_client_secret" {}
+variable "gh_client_id" {}
+variable "gh_client_secret" {}
 variable "openai_api_key" {}
 variable "polar_access_token" {}
