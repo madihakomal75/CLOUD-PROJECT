@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Terraform sensitive files
+**/.terraform/*
+*.tfstate
+*.tfstate.backup
+*.tfvars
