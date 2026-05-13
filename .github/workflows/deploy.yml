@@ -64,6 +64,7 @@ jobs:
           SQS_QUEUE_URL=${{ secrets.SQS_QUEUE_URL }}
           AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}
 
+
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
