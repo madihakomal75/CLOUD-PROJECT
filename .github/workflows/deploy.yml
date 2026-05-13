@@ -72,13 +72,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push image to Amazon ECR
+      - name: Build and Push Lambda Image
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: nodebase-lambda-worker # Ensure this repo exists in ECR
+          ECR_REPOSITORY: nodebase-lambda-worker
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          # Build using the specific Lambda Dockerfile
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile.lambda .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
@@ -86,5 +87,5 @@ jobs:
       - name: Update Lambda Function Code
         run: |
           aws lambda update-function-code \
-            --function-name nodebase-workflow-worker \
+            --function-name nodebase-workflow-worker-v2 \
             --image-uri ${{ steps.build-image.outputs.image }}
