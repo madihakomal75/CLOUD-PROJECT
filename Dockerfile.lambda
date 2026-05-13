@@ -1,0 +1,26 @@
+FROM public.ecr.aws/lambda/nodejs:22
+
+# Install zip and other utilities if needed
+RUN microdnf install -y zip
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
+RUN npx prisma generate
+
+# Copy the rest of the code
+COPY . .
+
+# Compile TypeScript
+RUN npx tsc --project workers/tsconfig.json
+
+# Cleanup to keep the image efficient (optional here due to 10GB limit)
+RUN npm prune --production --legacy-peer-deps
+
+# Set the CMD to your handler
+CMD [ "dist/workers/handler.handler" ]
