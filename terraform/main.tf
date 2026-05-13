@@ -306,7 +306,7 @@ resource "aws_lambda_function" "worker" {
   function_name = "nodebase-workflow-worker-v2" # Must match your deploy.yml
   role          = aws_iam_role.lambda_role.arn
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.lambda_repo.repository_url}:latest"
+  image_uri = "${aws_ecr_repository.lambda_repo.repository_url}:latest"
 
   environment {
     variables = {
