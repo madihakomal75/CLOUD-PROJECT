@@ -24,7 +24,8 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Generate Prisma and Build Next.js
-RUN npx prisma generate
+# This forces the build to use Version 5.x, which allows 'url' in the schema
+RUN npx prisma@5.22.0 generate
 RUN npm run build
 
 # Stage 2: Run
