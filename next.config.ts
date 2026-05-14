@@ -22,7 +22,7 @@ const nextConfig = {
 } as NextConfig;
 
 export default withSentryConfig(nextConfig, {
-  org: "enra-doo",
+  org: "salim-habib-university",
   project: "nodebase",
   silent: !process.env.CI,
   widenClientFileUpload: true,
