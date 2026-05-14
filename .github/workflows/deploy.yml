@@ -124,8 +124,8 @@ jobs:
           TF_VAR_encryption_key: ${{ secrets.ENCRYPTION_KEY }}
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          TF_VAR_gh_client_id: ${{ secrets.GITHUB_CLIENT_ID }}
-          TF_VAR_gh_client_secret: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          TF_VAR_gh_client_id: ${{ secrets.GH_CLIENT_ID }}
+          TF_VAR_gh_client_secret: ${{ secrets.GH_CLIENT_SECRET }}
           TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           TF_VAR_polar_access_token: ${{ secrets.POLAR_ACCESS_TOKEN }}
 
