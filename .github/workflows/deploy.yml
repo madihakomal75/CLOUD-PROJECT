@@ -35,6 +35,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Install Dependencies for Migration
+        run: npm install --legacy-peer-deps
+
+      - name: Push Prisma Schema to RDS
+        run: npx prisma db push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
