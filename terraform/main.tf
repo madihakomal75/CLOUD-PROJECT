@@ -195,14 +195,21 @@ resource "aws_lb" "alb" {
   security_groups    = [aws_security_group.alb_sg.id]
 }
 
-resource "aws_lb_target_group" "tg" {
+resource "aws_lb_target_group" "nodebase_tg" {
   name        = "nodebase-tg"
-  port        = 3000
+  port        = 3000        # Ensure this matches your container port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
   target_type = "ip"
+
   health_check {
-    path = "/api/auth/session"
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    # ADD THIS LINE: It tells AWS to accept 200 (OK) and 302 (Redirect) as Healthy
+    matcher             = "200,302" 
   }
 }
 
@@ -213,7 +220,7 @@ resource "aws_lb_listener" "http" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg.arn
+    target_group_arn = aws_lb_target_group.nodebase_tg.arn 
   }
 }
 
@@ -246,8 +253,8 @@ resource "aws_ecs_task_definition" "task" {
       { name = "ENCRYPTION_KEY", value = var.encryption_key },
       { name = "GOOGLE_CLIENT_ID", value = var.gh_client_id },
       { name = "GOOGLE_CLIENT_SECRET", value = var.gh_client_secret },
-      { name = "GITHUB_CLIENT_ID", value = var.github_client_id },
-      { name = "GITHUB_CLIENT_SECRET", value = var.github_client_secret },
+      { name = "GH_CLIENT_ID", value = var.gh_client_id },
+      { name = "GH_CLIENT_SECRET", value = var.gh_client_secret },
       { name = "OPENAI_API_KEY", value = var.openai_api_key },
       { name = "POLAR_ACCESS_TOKEN", value = var.polar_access_token },
       { name = "AWS_BUCKET_NAME", value = aws_s3_bucket.storage.id },
@@ -279,7 +286,7 @@ resource "aws_ecs_service" "service" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.tg.arn
+    target_group_arn = aws_lb_target_group.nodebase_tg.arn
     container_name   = "nodebase-container"
     container_port   = 3000
   }
@@ -302,12 +309,15 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+variable "lambda_image_tag" {
+  default = "latest"
+}
+
 resource "aws_lambda_function" "worker" {
   function_name = "nodebase-workflow-worker-v2" # Must match your deploy.yml
   role          = aws_iam_role.lambda_role.arn
   package_type  = "Image"
-  image_uri = "${aws_ecr_repository.lambda_repo.repository_url}:latest"
-
+  image_uri = "914179697087.dkr.ecr.us-east-1.amazonaws.com/nodebase-lambda-worker:${var.lambda_image_tag}"
   environment {
     variables = {
       DATABASE_URL = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase"
