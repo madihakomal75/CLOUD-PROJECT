@@ -16,7 +16,7 @@ ENV DATABASE_URL=$DATABASE_URL
 COPY package*.json ./
 # Force install specific Prisma versions to avoid version drift
 RUN npm install --legacy-peer-deps
-RUN npm install @prisma/client@5.22.0 prisma@5.22.0
+RUN npm install @prisma/client@5.22.0 prisma@5.22.0 --legacy-peer-deps
 
 COPY . .
 
