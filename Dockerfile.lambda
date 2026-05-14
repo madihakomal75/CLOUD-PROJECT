@@ -2,20 +2,23 @@ FROM public.ecr.aws/lambda/nodejs:22
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Install dependencies
-COPY package*.json ./
+# Skip Prisma postinstall since we run generate manually
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
+
+COPY package*.json ./
+
+# Must use --legacy-peer-deps to resolve polar-sh peer conflict
 RUN npm install --legacy-peer-deps
 
-# Copy source and Prisma schema
+# Overwrite with pinned Prisma versions
+RUN npm install @prisma/client@5.22.0 prisma@5.22.0 --legacy-peer-deps
+
 COPY . .
 
-# Generate Prisma Client
+# Generate Prisma Client targeting lambda environment
 RUN npx prisma generate
 
 # Build the project
 RUN npm run build
 
-# Ensure the handler points to your worker entry point
-# If your worker code is in src/worker.ts, this might be "dist/worker.handler"
-CMD [ "server.handler" ]
+CMD ["server.handler"]
