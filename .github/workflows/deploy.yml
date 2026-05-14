@@ -39,7 +39,8 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG:    ${{ github.sha }}
+          ECR_REPOSITORY: nodebase-app-repo  # Ensure this matches your ECR name
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build \
             --build-arg BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}" \
