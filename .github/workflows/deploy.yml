@@ -39,6 +39,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Push Prisma Schema to RDS
+        # This step now correctly maps the secret to the environment variable Prisma expects
         run: npx prisma db push
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
