@@ -10,4 +10,7 @@ variable "gh_client_id" {}
 variable "gh_client_secret" {}
 variable "openai_api_key" {}
 variable "polar_access_token" {}
-variable "lambda_image_tag" { default = "9318d858063f205ea8b8139992eb131ff0762d2c" }
+variable "lambda_image_tag" {
+  type    = string
+  default = "9318d858063f205ea8b8139992eb131ff0762d2c"
+}

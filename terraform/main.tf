@@ -309,10 +309,6 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-variable "lambda_image_tag" {
-  default = "latest"
-}
-
 resource "aws_lambda_function" "worker" {
   function_name = "nodebase-workflow-worker-v2" # Must match your deploy.yml
   role          = aws_iam_role.lambda_role.arn
