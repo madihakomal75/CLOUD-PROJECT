@@ -8,9 +8,7 @@ provider "aws" {
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
-  tags = {
-    Name = "nodebase-final-vpc"
-  }
+  tags = { Name = "nodebase-final-vpc" }
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -129,11 +127,13 @@ resource "aws_sqs_queue" "queue" {
 }
 
 resource "aws_ecr_repository" "lambda_repo" {
-  name = "nodebase-lambda-worker"
+  name         = "nodebase-lambda-worker"
+  force_delete = true
 }
 
 resource "aws_ecr_repository" "repo" {
-  name = "nodebase-app-repo"
+  name         = "nodebase-app-repo"
+  force_delete = true
 }
 
 resource "aws_cloudwatch_log_group" "ecs_logs" {
@@ -148,9 +148,7 @@ resource "aws_iam_role" "ecs_exec" {
     Statement = [{
       Action = "sts:AssumeRole",
       Effect = "Allow",
-      Principal = {
-        Service = "ecs-tasks.amazonaws.com"
-      }
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
     }]
   })
 }
@@ -167,9 +165,7 @@ resource "aws_iam_role" "ecs_task" {
     Statement = [{
       Action = "sts:AssumeRole",
       Effect = "Allow",
-      Principal = {
-        Service = "ecs-tasks.amazonaws.com"
-      }
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
     }]
   })
 }
@@ -197,7 +193,7 @@ resource "aws_lb" "alb" {
 
 resource "aws_lb_target_group" "nodebase_tg" {
   name        = "nodebase-tg"
-  port        = 3000        # Ensure this matches your container port
+  port        = 3000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
   target_type = "ip"
@@ -207,9 +203,8 @@ resource "aws_lb_target_group" "nodebase_tg" {
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2
-    unhealthy_threshold = 2
-    # ADD THIS LINE: It tells AWS to accept 200 (OK) and 302 (Redirect) as Healthy
-    matcher             = "200,302" 
+    unhealthy_threshold = 3
+    matcher             = "200-399" # Corrected: Accepts OK and Redirects
   }
 }
 
@@ -232,17 +227,15 @@ resource "aws_ecs_task_definition" "task" {
   family                   = "nodebase-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "512"
+  memory                   = "1024"
   execution_role_arn       = aws_iam_role.ecs_exec.arn
   task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([{
     name  = "nodebase-container"
     image = "${aws_ecr_repository.repo.repository_url}:latest"
-    portMappings = [{
-      containerPort = 3000
-    }]
+    portMappings = [{ containerPort = 3000 }]
     environment = [
       { name = "DATABASE_URL", value = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase" },
       { name = "DIRECT_URL", value = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase" },
@@ -251,10 +244,12 @@ resource "aws_ecs_task_definition" "task" {
       { name = "BETTER_AUTH_URL", value = "http://${aws_lb.alb.dns_name}" },
       { name = "BETTER_AUTH_SECRET", value = var.better_auth_secret },
       { name = "ENCRYPTION_KEY", value = var.encryption_key },
-      { name = "GOOGLE_CLIENT_ID", value = var.gh_client_id },
-      { name = "GOOGLE_CLIENT_SECRET", value = var.gh_client_secret },
-      { name = "GH_CLIENT_ID", value = var.gh_client_id },
-      { name = "GH_CLIENT_SECRET", value = var.gh_client_secret },
+      # --- CORRECTED MAPPINGS BELOW ---
+      { name = "GOOGLE_CLIENT_ID", value = var.google_client_id },
+      { name = "GOOGLE_CLIENT_SECRET", value = var.google_client_secret },
+      { name = "GITHUB_CLIENT_ID", value = var.gh_client_id },
+      { name = "GITHUB_CLIENT_SECRET", value = var.gh_client_secret },
+      # --------------------------------
       { name = "OPENAI_API_KEY", value = var.openai_api_key },
       { name = "POLAR_ACCESS_TOKEN", value = var.polar_access_token },
       { name = "AWS_BUCKET_NAME", value = aws_s3_bucket.storage.id },
@@ -291,6 +286,7 @@ resource "aws_ecs_service" "service" {
     container_port   = 3000
   }
 }
+
 # --- 6. LAMBDA WORKER ---
 resource "aws_iam_role" "lambda_role" {
   name = "nodebase-lambda-role"
@@ -310,10 +306,11 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 }
 
 resource "aws_lambda_function" "worker" {
-  function_name = "nodebase-workflow-worker-v2" # Must match your deploy.yml
+  function_name = "nodebase-workflow-worker-v2"
   role          = aws_iam_role.lambda_role.arn
   package_type  = "Image"
-  image_uri = "914179697087.dkr.ecr.us-east-1.amazonaws.com/nodebase-lambda-worker:${var.lambda_image_tag}"
+  image_uri     = "${aws_ecr_repository.lambda_repo.repository_url}:${var.lambda_image_tag}"
+  
   environment {
     variables = {
       DATABASE_URL = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase"

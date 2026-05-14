@@ -11,6 +11,6 @@ variable "gh_client_secret" {}
 variable "openai_api_key" {}
 variable "polar_access_token" {}
 variable "lambda_image_tag" {
-  type    = string
-  default = "9318d858063f205ea8b8139992eb131ff0762d2c"
+  type        = string
+  description = "Dynamic tag passed from GitHub Actions"
 }

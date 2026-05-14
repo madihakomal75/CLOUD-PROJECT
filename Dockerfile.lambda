@@ -2,18 +2,20 @@ FROM public.ecr.aws/lambda/nodejs:22
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
+# Install dependencies
 COPY package*.json ./
-COPY prisma ./prisma/
-
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
 RUN npm install --legacy-peer-deps
 
+# Copy source and Prisma schema
 COPY . .
 
-# Generate Prisma and build
+# Generate Prisma Client
 RUN npx prisma generate
+
+# Build the project
 RUN npm run build
 
-# If you are using the Next.js standalone server for the worker:
-CMD [ "server.handler" ] 
-# Note: Ensure your server.js exports a 'handler' for Lambda.
+# Ensure the handler points to your worker entry point
+# If your worker code is in src/worker.ts, this might be "dist/worker.handler"
+CMD [ "server.handler" ]
