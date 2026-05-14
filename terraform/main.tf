@@ -199,13 +199,13 @@ resource "aws_lb_target_group" "nodebase_tg" {
   target_type = "ip"
 
   health_check {
-    path                = "/"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    matcher             = "200-399" # Corrected: Accepts OK and Redirects
-  }
+  path                = "/api/health"
+  interval            = 30
+  timeout             = 5
+  healthy_threshold   = 2
+  unhealthy_threshold = 3
+  matcher             = "200-399"
+}
 }
 
 resource "aws_lb_listener" "http" {
