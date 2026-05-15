@@ -260,7 +260,6 @@ resource "aws_ecs_task_definition" "task" {
       { name = "GITHUB_CLIENT_SECRET", value = var.gh_client_secret },
       # --------------------------------
       { name = "OPENAI_API_KEY", value = var.openai_api_key },
-      { name = "POLAR_ACCESS_TOKEN", value = var.polar_access_token },
       { name = "AWS_BUCKET_NAME", value = aws_s3_bucket.storage.id },
       { name = "AWS_REGION", value = var.region },
       { name = "AUTH_TRUST_HOST", value = "true" }

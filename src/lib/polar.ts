@@ -1,6 +1,3 @@
-import { Polar } from "@polar-sh/sdk";
-
-export const polarClient = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN,
-  server: "sandbox"
-});
+// src/lib/polar.ts
+// Polar is temporarily disabled to troubleshoot 401 authentication errors.
+export const polarClient = {} as any;

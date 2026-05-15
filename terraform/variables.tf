@@ -9,7 +9,6 @@ variable "google_client_secret" {}
 variable "gh_client_id" {}
 variable "gh_client_secret" {}
 variable "openai_api_key" {}
-variable "polar_access_token" {}
 variable "lambda_image_tag" {
   type        = string
   description = "Dynamic tag passed from GitHub Actions"
