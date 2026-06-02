@@ -38,8 +38,8 @@ jobs:
       - name: Install Dependencies for Migration
         run: npm install --legacy-peer-deps
 
-      - name: Push Prisma Schema to RDS
-        run: npx prisma db push
+      #- name: Push Prisma Schema to RDS
+       # run: npx prisma db push
         env:
           # This ensures the secret is passed as a clean string to the CLI
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
