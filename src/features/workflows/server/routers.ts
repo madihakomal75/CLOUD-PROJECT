@@ -5,7 +5,7 @@ import { createTRPCRouter, premiumProcedure, protectedProcedure } from "@/trpc/i
 import z from "zod";
 import { PAGINATION } from "@/config/constants";
 import { NodeType } from "@/generated/prisma";
-import { sendToQueue } from "@/lib/sqs";
+import { executeWorkflowInline } from "@/features/executions/lib/execute-workflow-inline";
 
 export const workflowsRouter = createTRPCRouter({
   execute: protectedProcedure
@@ -18,10 +18,8 @@ export const workflowsRouter = createTRPCRouter({
         },
       });
 
-      await sendToQueue({
-        type: "executeWorkflow",
-        workflowId: input.id,
-      });
+      // Temporary presentation fallback mode: run the canvas workflow inline instead of pushing to SQS.
+      await executeWorkflowInline(input.id, ctx.auth.user.id);
 
       return workflow;
     }),
