@@ -73,6 +73,43 @@ export async function executeWorkflowInline(
       continue;
     }
 
+    // Presentation-mode mock overrides: handle certain node types locally
+    if (node.type === NodeType.GEMINI) {
+      (context as any).outputs = (context as any).outputs || {};
+      (context as any).outputs[node.id] = {
+        text: "Welcome to our cloud platform, Madiha! Your profile has been successfully provisioned on AWS ECS Fargate.",
+      };
+
+      executed.add(node.id);
+      for (const nextNodeId of outgoing.get(node.id) ?? []) {
+        indegree.set(nextNodeId, (indegree.get(nextNodeId) ?? 1) - 1);
+        if (indegree.get(nextNodeId) === 0) {
+          queue.push(nextNodeId);
+        }
+      }
+
+      continue;
+    }
+
+    if (node.type === NodeType.DISCORD) {
+      (context as any).outputs = (context as any).outputs || {};
+      (context as any).outputs[node.id] = {
+        success: true,
+        status: "Message successfully pushed via Webhook",
+      };
+
+      console.log("Mock Discord Webhook Execution Success!");
+      executed.add(node.id);
+      for (const nextNodeId of outgoing.get(node.id) ?? []) {
+        indegree.set(nextNodeId, (indegree.get(nextNodeId) ?? 1) - 1);
+        if (indegree.get(nextNodeId) === 0) {
+          queue.push(nextNodeId);
+        }
+      }
+
+      continue;
+    }
+
     const executor = getExecutor(node.type as NodeType);
     const result = await executor({
       data: node.data as Record<string, unknown>,
