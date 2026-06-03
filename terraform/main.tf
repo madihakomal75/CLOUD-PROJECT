@@ -282,6 +282,8 @@ resource "aws_ecs_service" "service" {
   launch_type     = "FARGATE"
   desired_count   = 1
 
+
+
   network_configuration {
     subnets          = [aws_subnet.pub_a.id, aws_subnet.pub_b.id]
     assign_public_ip = true
