@@ -12,7 +12,7 @@ COPY workers/tsconfig.json ./workers/tsconfig.json
 RUN npx tsc -p workers/tsconfig.json
 
 # Safety check: ensure expected output exists
-RUN test -f workers/dist/task-handler.js || (echo "ERROR: workers/dist/task-handler.js not found" && exit 1)
+RUN test -f dist/task-handler.js || (echo "ERROR: dist/task-handler.js not found" && exit 1)
 
 FROM amazon/aws-lambda-nodejs:20
 
@@ -23,6 +23,6 @@ COPY package*.json ./
 RUN npm install --omit=dev --legacy-peer-deps
 
 # Copy compiled worker output into the Lambda task root
-COPY --from=builder /app/workers/dist ./dist
+COPY --from=builder /app/dist ${LAMBDA_TASK_ROOT}/dist
 
 CMD ["dist/task-handler.handler"]
