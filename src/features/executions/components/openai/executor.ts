@@ -1,6 +1,6 @@
 import Handlebars from "handlebars";
 import { generateText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { NodeExecutor } from "@/features/executions/types";
 import { openAiChannel } from "@/lib/inngest-stubs";
 import prisma from "@/lib/db";
@@ -89,16 +89,16 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
     throw new Error("OpenAI node: Credential not found");
   }
 
-  const openai = createOpenAI({
-    apiKey: decrypt(credential.value),
+  const google = createGoogleGenerativeAI({
+    apiKey: process.env.GEMINI_API_KEY ?? decrypt(credential.value),
   });
 
   try {
     const { steps } = await step.ai.wrap(
-      "openai-generate-text",
+      "google-generate-text",
       generateText,
       {
-        model: openai("gpt-4"),
+        model: google("gemini-1.5-pro"),
         system: systemPrompt,
         prompt: userPrompt,
         experimental_telemetry: {

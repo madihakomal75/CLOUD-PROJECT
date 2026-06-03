@@ -38,8 +38,6 @@ jobs:
       - name: Install Dependencies for Migration
         run: npm install --legacy-peer-deps
 
-      #- name: Push Prisma Schema to RDS
-       # run: npx prisma db push
         env:
           # This ensures the secret is passed as a clean string to the CLI
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -84,7 +82,7 @@ jobs:
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
             GITHUB_CLIENT_ID=${{ secrets.GH_CLIENT_ID }}
             GITHUB_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             SQS_QUEUE_URL=${{ secrets.SQS_QUEUE_URL }}
             AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}
             NODE_ENV=production
@@ -168,7 +166,7 @@ jobs:
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           TF_VAR_gh_client_id:         ${{ secrets.GH_CLIENT_ID }}
           TF_VAR_gh_client_secret:     ${{ secrets.GH_CLIENT_SECRET }}
-          TF_VAR_openai_api_key:       ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_gemini_api_key:       ${{ secrets.GEMINI_API_KEY }}
           TF_VAR_polar_access_token:   ${{ secrets.POLAR_ACCESS_TOKEN }}
           TF_VAR_lambda_image_tag:     ${{ github.sha }}
 
@@ -185,7 +183,7 @@ jobs:
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           TF_VAR_gh_client_id:         ${{ secrets.GH_CLIENT_ID }}
           TF_VAR_gh_client_secret:     ${{ secrets.GH_CLIENT_SECRET }}
-          TF_VAR_openai_api_key:       ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_gemini_api_key:       ${{ secrets.GEMINI_API_KEY }}
           TF_VAR_polar_access_token:   ${{ secrets.POLAR_ACCESS_TOKEN }}
 
       - name: Update Lambda Function Code
