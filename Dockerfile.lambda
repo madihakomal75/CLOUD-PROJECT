@@ -1,24 +1,28 @@
-FROM public.ecr.aws/lambda/nodejs:22
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy root package files and install all dependencies (including dev)
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
+# Copy workers source and related configs, then compile
+COPY workers/ ./workers/
+COPY workers/tsconfig.json ./workers/tsconfig.json
+RUN npx tsc -p workers/tsconfig.json
+
+# Safety check: ensure expected output exists
+RUN test -f workers/dist/task-handler.js || (echo "ERROR: workers/dist/task-handler.js not found" && exit 1)
+
+FROM public.ecr.aws/lambda/nodejs20.x
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Skip Prisma postinstall since we run generate manually
-ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
-
+# Install only production dependencies
 COPY package*.json ./
+RUN npm install --omit=dev --legacy-peer-deps
 
-# Must use --legacy-peer-deps to resolve polar-sh peer conflict
-RUN npm install --legacy-peer-deps
-
-# Overwrite with pinned Prisma versions
-RUN npm install @prisma/client@5.22.0 prisma@5.22.0 --legacy-peer-deps
-
-COPY . .
-
-# Generate Prisma Client targeting lambda environment
-RUN npx prisma generate
-
-# Build the project
-RUN npm run build
+# Copy compiled worker output into the Lambda task root
+COPY --from=builder /app/workers/dist ./dist
 
 CMD ["dist/task-handler.handler"]
