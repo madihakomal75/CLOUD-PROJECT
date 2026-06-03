@@ -8,7 +8,7 @@ variable "google_client_id" {}
 variable "google_client_secret" {}
 variable "gh_client_id" {}
 variable "gh_client_secret" {}
-variable "openai_api_key" {}
+variable "gemini_api_key" {}
 variable "lambda_image_tag" {
   type        = string
   description = "Dynamic tag passed from GitHub Actions"

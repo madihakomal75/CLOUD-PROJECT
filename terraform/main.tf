@@ -65,7 +65,7 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["202.70.156.109/32"]
   }
 
   egress {
@@ -250,7 +250,7 @@ resource "aws_ecs_task_definition" "task" {
       { name = "DIRECT_URL", value = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase" },
       { name = "SQS_QUEUE_URL", value = aws_sqs_queue.queue.id },
       { name = "NEXT_PUBLIC_APP_URL", value = "http://${aws_lb.alb.dns_name}" },
-      { name = "BETTER_AUTH_URL", value = "http://${aws_lb.alb.dns_name}" },
+      { name = "BETTER_AUTH_URL", value = "http://nodebase-alb-387244341.us-east-1.elb.amazonaws.com" },
       { name = "BETTER_AUTH_SECRET", value = var.better_auth_secret },
       { name = "ENCRYPTION_KEY", value = var.encryption_key },
       # --- CORRECTED MAPPINGS BELOW ---
@@ -259,7 +259,7 @@ resource "aws_ecs_task_definition" "task" {
       { name = "GITHUB_CLIENT_ID", value = var.gh_client_id },
       { name = "GITHUB_CLIENT_SECRET", value = var.gh_client_secret },
       # --------------------------------
-      { name = "OPENAI_API_KEY", value = var.openai_api_key },
+      { name = "GEMINI_API_KEY", value = var.gemini_api_key },
       { name = "AWS_BUCKET_NAME", value = aws_s3_bucket.storage.id },
       { name = "AWS_REGION", value = var.region },
       { name = "AUTH_TRUST_HOST", value = "true" }
