@@ -1,28 +1,36 @@
+# ---- Stage 1: Build ----
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy root package files and install all dependencies (including dev)
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm install --legacy-peer-deps
 
-# Copy workers source and related configs, then compile
+# 1. ADD THIS LINE: Copy your prisma schema folder so the builder can see it
+COPY prisma/ ./prisma/
+
 COPY workers/ ./workers/
 COPY workers/tsconfig.json ./workers/tsconfig.json
-RUN npx tsc -p workers/tsconfig.json
+COPY tsconfig.json ./tsconfig.json
 
-# Safety check: ensure expected output exists
+# 2. ADD THIS LINE: Generate the Prisma client engines
+RUN npx prisma generate
+
+RUN npx tsc -p workers/tsconfig.json
 RUN test -f dist/task-handler.js || (echo "ERROR: dist/task-handler.js not found" && exit 1)
 
+# ---- Stage 2: Lambda runtime image ----
 FROM amazon/aws-lambda-nodejs:20
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Install only production dependencies
-COPY package*.json ./
-RUN npm install --omit=dev --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN npm install --legacy-peer-deps --omit=dev
 
-# Copy compiled worker output into the Lambda task root
+# 3. ADD THESE LINES: Copy prisma schema and generated client files into the runner
+COPY prisma/ ./prisma/
+COPY --from=builder /app/node_modules/.prisma ${LAMBDA_TASK_ROOT}/node_modules/.prisma
+
 COPY --from=builder /app/dist ${LAMBDA_TASK_ROOT}/dist
 
 CMD ["dist/task-handler.handler"]
