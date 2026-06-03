@@ -329,6 +329,13 @@ resource "aws_lambda_function" "worker" {
   }
 }
 
+resource "aws_lambda_event_source_mapping" "sqs_trigger" {
+  event_source_arn = "arn:aws:sqs:us-east-1:914179697087:nodebase-notification-queue"
+  function_name    = aws_lambda_function.worker.arn
+  batch_size       = 1
+  enabled          = true
+}
+
 output "alb_dns" {
   value = aws_lb.alb.dns_name
 }
