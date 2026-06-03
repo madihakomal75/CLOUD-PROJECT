@@ -248,7 +248,7 @@ resource "aws_ecs_task_definition" "task" {
     environment = [
       { name = "DATABASE_URL", value = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase" },
       { name = "DIRECT_URL", value = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase" },
-      { name = "SQS_QUEUE_URL", value = aws_sqs_queue.queue.id },
+      { name = "SQS_QUEUE_URL", value = "https://sqs.us-east-1.amazonaws.com/914179697087/nodebase-notification-queue" },
       { name = "NEXT_PUBLIC_APP_URL", value = "http://${aws_lb.alb.dns_name}" },
       { name = "BETTER_AUTH_URL", value = "http://nodebase-alb-387244341.us-east-1.elb.amazonaws.com" },
       { name = "BETTER_AUTH_SECRET", value = var.better_auth_secret },
@@ -322,6 +322,7 @@ resource "aws_lambda_function" "worker" {
   environment {
     variables = {
       DATABASE_URL = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase"
+      SQS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/914179697087/nodebase-notification-queue"
     }
   }
 }
