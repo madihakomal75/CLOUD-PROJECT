@@ -1,16 +1,24 @@
 import { generateSlug } from "random-word-slugs";
+import { createId } from "@paralleldrive/cuid2";
 import prisma from "@/lib/db";
 import type { Node, Edge } from "@xyflow/react";
 import { createTRPCRouter, premiumProcedure, protectedProcedure } from "@/trpc/init";
 import z from "zod";
 import { PAGINATION } from "@/config/constants";
-import { NodeType } from "@/generated/prisma";
-import { executeWorkflowInline } from "@/features/executions/lib/execute-workflow-inline";
+import { NodeType, ExecutionStatus } from "@/generated/prisma";
+import { sendToQueue } from "@/lib/sqs";
 
 export const workflowsRouter = createTRPCRouter({
   execute: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
+      // Validate SQS queue URL is configured
+      if (!process.env.SQS_QUEUE_URL) {
+        throw new Error(
+          "SQS_QUEUE_URL environment variable is not configured. Cannot queue workflow execution."
+        );
+      }
+
       const workflow = await prisma.workflow.findUniqueOrThrow({
         where: {
           id: input.id,
@@ -18,10 +26,53 @@ export const workflowsRouter = createTRPCRouter({
         },
       });
 
-      // Temporary presentation fallback mode: run the canvas workflow inline instead of pushing to SQS.
-      await executeWorkflowInline(input.id, ctx.auth.user.id);
+      // Create an execution record with RUNNING status
+      const execution = await prisma.execution.create({
+        data: {
+          workflowId: input.id,
+          status: ExecutionStatus.RUNNING,
+          inngestEventId: createId(),
+        },
+      });
 
-      return workflow;
+      try {
+        // Send the workflow execution payload to AWS SQS for remote processing
+        await sendToQueue({
+          type: "workflowExecution",
+          taskId: execution.id,
+          executionId: execution.id,
+          workflowId: input.id,
+          userId: ctx.auth.user.id,
+          timestamp: new Date().toISOString(),
+        });
+
+        console.log(
+          `[Workflow Execution] Queued execution ${execution.id} for workflow ${input.id}`
+        );
+      } catch (error) {
+        // If SQS send fails, mark execution as failed
+        await prisma.execution.update({
+          where: { id: execution.id },
+          data: {
+            status: ExecutionStatus.FAILED,
+            error: "Failed to queue workflow execution",
+            errorStack:
+              error instanceof Error ? error.stack : String(error),
+            completedAt: new Date(),
+          },
+        });
+
+        throw new Error(
+          `Failed to queue workflow execution: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+
+      return {
+        ...workflow,
+        execution,
+      };
     }),
   create: premiumProcedure.mutation(({ ctx }) => {
     return prisma.workflow.create({
