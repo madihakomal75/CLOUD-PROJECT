@@ -65,7 +65,7 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["202.70.156.109/32"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -246,23 +246,22 @@ resource "aws_ecs_task_definition" "task" {
     image = "${aws_ecr_repository.repo.repository_url}:latest"
     portMappings = [{ containerPort = 3000 }]
     environment = [
-      { name = "DATABASE_URL", value = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase" },
-      { name = "DIRECT_URL", value = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase" },
-      { name = "SQS_QUEUE_URL", value = "https://sqs.us-east-1.amazonaws.com/914179697087/nodebase-notification-queue" },
-      { name = "NEXT_PUBLIC_APP_URL", value = "http://${aws_lb.alb.dns_name}" },
-      { name = "BETTER_AUTH_URL", value = "http://nodebase-alb-387244341.us-east-1.elb.amazonaws.com" },
-      { name = "BETTER_AUTH_SECRET", value = var.better_auth_secret },
-      { name = "ENCRYPTION_KEY", value = var.encryption_key },
-      # --- CORRECTED MAPPINGS BELOW ---
-      { name = "GOOGLE_CLIENT_ID", value = var.google_client_id },
-      { name = "GOOGLE_CLIENT_SECRET", value = var.google_client_secret },
-      { name = "GITHUB_CLIENT_ID", value = var.gh_client_id },
-      { name = "GITHUB_CLIENT_SECRET", value = var.gh_client_secret },
-      # --------------------------------
-      { name = "GEMINI_API_KEY", value = var.gemini_api_key },
-      { name = "AWS_BUCKET_NAME", value = aws_s3_bucket.storage.id },
-      { name = "AWS_REGION", value = var.region },
-      { name = "AUTH_TRUST_HOST", value = "true" }
+      {
+        name  = "DATABASE_URL"
+        value = "postgresql://${aws_db_instance.db.username}:${var.db_password}@${aws_db_instance.db.endpoint}/nodebase"
+      },
+      {
+        name  = "NEXT_PUBLIC_APP_URL"
+        value = "http://${aws_lb.alb.dns_name}"
+      },
+      {
+        name  = "NEXTAUTH_URL"
+        value = "http://${aws_lb.alb.dns_name}"
+      },
+      {
+        name  = "BETTER_AUTH_SECRET"
+        value = var.better_auth_secret
+      }
     ]
     logConfiguration = {
       logDriver = "awslogs"
@@ -367,8 +366,11 @@ resource "aws_lambda_function" "worker" {
   
   environment {
     variables = {
-      DATABASE_URL = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase"
-      SQS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/914179697087/nodebase-notification-queue"
+      # Pulls directly from your working active RDS instance setup
+      DATABASE_URL   = "postgresql://${aws_db_instance.db.username}:${var.db_password}@${aws_db_instance.db.endpoint}/nodebase"
+      
+      # Pulls from your validated input variable definition
+      GEMINI_API_KEY = var.gemini_api_key
     }
   }
 }
