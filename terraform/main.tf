@@ -361,6 +361,10 @@ resource "aws_lambda_function" "worker" {
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.lambda_repo.repository_url}:${var.lambda_image_tag}"
   
+  image_config {
+    command = ["dist/task-handler.handler"]
+  }
+  
   environment {
     variables = {
       DATABASE_URL = "postgresql://postgres:medipack00%23@${aws_db_instance.db.endpoint}/nodebase"
